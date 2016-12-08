@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <GL/glut.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define MAX_VERTICES_POR_FACE 4
 
@@ -176,14 +177,14 @@ void DesenhaParede(void)
     glVertex3f(TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
   glEnd();
 
-  glColor3f(0.95f, 0.95f, 0.95f);
+  /*glColor3f(0.95f, 0.95f, 0.95f);
   // Desenha FACE TOPO
   glBegin(GL_POLYGON);
     glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
     glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,-TAMANHO_SALA);
     glVertex3f(TAMANHO_SALA, TAMANHO_SALA, -TAMANHO_SALA);
     glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
-  glEnd();
+  glEnd();*/
 
 }
 
@@ -330,7 +331,7 @@ void Desenha(void)
   // de fundo definida previamente
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  DesenhaParede();
+  //DesenhaParede();
   desenha_chao();
   desenha_mesa();
 
@@ -347,6 +348,9 @@ void PosicionaObservador(void)
   glLoadIdentity();
   // Posiciona e orienta o observador
   glTranslatef(-obsX,-obsY,-obsZ);
+
+  printf("%f %f %f\n", obsX, obsY, obsZ);
+
   glRotatef(rotX,1,0,0);
   glRotatef(rotY,0,1,0);
 }
@@ -495,14 +499,15 @@ void Inicializa(void)
 
   // Inicializa a variável que especifica o ângulo da projeção
   // perspectiva
-  angle=45;
+  angle=60;
 
   // Inicializa as variáveis usadas para alterar a posição do
   // observador virtual
-  rotX = 30;
-  rotY = 0;
-  obsX = obsY = 0;
-  obsZ = 30;
+  rotX = 50;
+  rotY = 90;
+  obsX = -4.5;
+  obsY = 2.3;
+  obsZ = 33;
 }
 
 // Programa Principal
@@ -515,7 +520,7 @@ int main(void)
   glutInitWindowPosition(5,5);
 
   // Especifica o tamanho inicial em pixels da janela GLUT
-  glutInitWindowSize(450,450);
+  glutInitWindowSize(750,450);
 
   // Cria a janela passando como argumento o título da mesma
   glutCreateWindow("Desenho de um teapot iluminado por spots");
