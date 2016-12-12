@@ -2,6 +2,9 @@
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+
+
 
 #define MAX_VERTICES_POR_FACE 4
 
@@ -36,16 +39,16 @@ void desenha_obj_modo(Objeto* objeto, GLenum modo)
 
 void desenha_objeto(Objeto* objeto)
 {
-    desenha_obj_modo(objeto, GL_POLYGON);
-    glPushAttrib(GL_CURRENT_BIT);
-    glColor3f(0, 0, 0);
-    glLineWidth(0.5);
-    desenha_obj_modo(objeto, GL_LINE_LOOP);
-    glPopAttrib();
+  desenha_obj_modo(objeto, GL_POLYGON);
+  glPushAttrib(GL_CURRENT_BIT);
+  glColor3f(0, 0, 0);
+  glLineWidth(0.5);
+  desenha_obj_modo(objeto, GL_LINE_LOOP);
+  glPopAttrib();
 }
 
 const Face faces_paralelepido[] = {
-  { 4, { 0, 2, 3, 1 } },  // 0 - Frente ?
+  { 4, { 0, 1, 3, 2 } },  // 0 - Frente ?*
   { 4, { 4, 5, 7, 6 } },  // 1 - Trás ?
   { 4, { 4, 5, 1, 0 } },  // 2 - Baixo ?
   { 4, { 2, 3, 7, 6 } },  // 3 - Cima
@@ -79,7 +82,7 @@ void free_paralelepido(Objeto* paralelepido)
   free(paralelepido->vertices);
 }
 
-const float TAMANHO_SALA = 30.0f;
+const float TAMANHO_SALA = 70.0f;
 
 // Variáveis para controles de navegação
 GLfloat angle, fAspect;
@@ -94,7 +97,7 @@ GLfloat posLuz[4] = {  0, 70,  0, 1 };
 GLfloat dirLuz[3] = { 0,-1,0 };
 GLfloat luzDifusa[4] = { 0.4,0.4,0.4,1 };
 GLfloat luzEspecular[4] = { 0.7,0.7,0.7,1 };
-GLfloat luzAmbiente[4]= {0.0,0.0,0.0,1.0};
+GLfloat luzAmbiente[4]= {0.2,0.2,0.2,1.0};
 
 // Função responsável pela especificação dos parâmetros de iluminaç¿o
 void DefineIluminacao(void)
@@ -160,14 +163,14 @@ void DesenhaParede(void)
   glVertex3f(TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
   glEnd();
 
-  glColor3f(0.95f, 0.95f, 0.95f);
+  /*glColor3f(0.95f, 0.95f, 0.95f);
   // Desenha FACE TOPO
   glBegin(GL_POLYGON);
-    glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,-TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, TAMANHO_SALA, -TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
-  glEnd();
+  glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, TAMANHO_SALA, -TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
+  glEnd();*/
 
 }
 
@@ -220,15 +223,19 @@ const float ALTURA_MESA = 15.0f;
 
 void desenha_paralelepido(float comprimento, float largura, float altura)
 {
-  Objeto pe_da_mesa = novo_paralelepido(comprimento, largura, altura);
+  /*Objeto pe_da_mesa = novo_paralelepido(comprimento, largura, altura);
   desenha_objeto(&pe_da_mesa);
-  free_paralelepido(&pe_da_mesa);
+  free_paralelepido(&pe_da_mesa);*/
+  glPushMatrix();
+  glScalef(comprimento, altura, largura);
+  glutSolidCube(1.0);
+  glPopMatrix();
 }
 
 void desenha_pe_mesa(float x, float z)
 {
   glPushMatrix();
-  glTranslatef(x, -TAMANHO_SALA, z);
+  glTranslatef(x, -TAMANHO_SALA + ALTURA_MESA/2, z);
 
   glColor3f(0.55, 0.34, 0.26);
   desenha_paralelepido(5, 5, ALTURA_MESA);
@@ -238,60 +245,68 @@ void desenha_pe_mesa(float x, float z)
 
 void desenha_pes_mesa()
 {
-  desenha_pe_mesa(0, 5);
-  desenha_pe_mesa(0, -15);
-  desenha_pe_mesa(0, 20);
-  desenha_pe_mesa(10, 5);
-  desenha_pe_mesa(10, -15);
-  desenha_pe_mesa(10, 20);
+  desenha_pe_mesa(-33, -12.5);
+  desenha_pe_mesa(-33, 12.5);
+  desenha_pe_mesa(0, -12.5);
+  desenha_pe_mesa(0, 12.5);
+  desenha_pe_mesa(33, -12.5);
+  desenha_pe_mesa(33, 12.5);
 }
+
+const float COMPRIMENTO_MESA = 73;
+const float LARGURA_MESA = 35;
+const float ESPESSURA_MESA = 2;
 
 void desenha_tampa_mesa()
 {
   glPushMatrix();
-  glTranslatef(-3, ALTURA_MESA - TAMANHO_SALA, 23);
+  glTranslatef(0, ALTURA_MESA - TAMANHO_SALA, 0);
 
   glColor3f(0.55, 0.34, 0.26);
-  desenha_paralelepido(20, 45, 2);
+  desenha_paralelepido(COMPRIMENTO_MESA, LARGURA_MESA, ESPESSURA_MESA);
 
   glPopMatrix();
 }
 
+const float T = 3.0f;
+
 void desenha_beirada_mesa()
 {
-  const float altura_beirada = 3.0f;
 
   glPushMatrix();
-  glTranslatef(-3, ALTURA_MESA-TAMANHO_SALA+2, 21);
-  desenha_paralelepido(2, 41, altura_beirada);
+  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, LARGURA_MESA/2 - T/2);
+  desenha_paralelepido(COMPRIMENTO_MESA, T, T);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(15, ALTURA_MESA-TAMANHO_SALA+2, 21);
-  desenha_paralelepido(2, 41, altura_beirada);
+  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, -LARGURA_MESA/2 + T/2);
+  desenha_paralelepido(COMPRIMENTO_MESA, T, T);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(-3, ALTURA_MESA-TAMANHO_SALA+2, -20);
-  desenha_paralelepido(20, 2, altura_beirada);
+  glTranslatef(COMPRIMENTO_MESA/2 - T/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
+  desenha_paralelepido(T, LARGURA_MESA, T);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(-3, ALTURA_MESA-TAMANHO_SALA+2, 23);
-  desenha_paralelepido(20, 2, altura_beirada);
+  glTranslatef(-COMPRIMENTO_MESA/2 + T/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
+  desenha_paralelepido(T, LARGURA_MESA, T);
   glPopMatrix();
 }
 
 void desenha_tabuleiro()
 {
-  const float y = ALTURA_MESA-TAMANHO_SALA+2.5;
+  const float y = ALTURA_MESA-TAMANHO_SALA+1.2;
+
+  float C = COMPRIMENTO_MESA;
+  float L = LARGURA_MESA;
 
   glColor3f(0, 1, 0);
   glBegin(GL_POLYGON);
-  glVertex3f(-3, y, 23);
-  glVertex3f(17, y, 23);
-  glVertex3f(17, y, -20);
-  glVertex3f(-3, y, -20);
+  glVertex3f(-C/2+T/2, y, L/2-T/2);
+  glVertex3f(-C/2+T/2, y, -L/2+T/2);
+  glVertex3f(C/2-T/2, y, -L/2+T/2);
+  glVertex3f(C/2-T/2, y, L/2-T/2);
   glEnd();
 }
 
@@ -301,6 +316,70 @@ void desenha_mesa()
   desenha_tampa_mesa();
   desenha_beirada_mesa();
   desenha_tabuleiro();
+}
+
+void desenha_bola(float x, float z)
+{
+  const float ALTURA_BOLA = -TAMANHO_SALA+ALTURA_MESA+2.5;
+  glPushMatrix();
+  glTranslatef(x, ALTURA_BOLA, z);
+  glutSolidSphere(1, 10, 10);
+  glPopMatrix();
+}
+
+void desenha_bolas()
+{
+  const float C = COMPRIMENTO_MESA;
+  const float L = LARGURA_MESA;
+
+  glColor3f(1, 1, 0);
+  desenha_bola(C/2 - C/4.5, 0);
+  glColor3f(0, 0, 1);
+  desenha_bola(C/2 - C/4.5 + 2, -1);
+  glColor3f(1, 0.65, 0);
+  desenha_bola(C/2 - C/4.5 + 2, 1);
+  glColor3f(0.5, 0, 0.5);
+  desenha_bola(C/2 - C/4.5 + 4, 2);
+  glColor3f(1, 0, 0);
+  desenha_bola(C/2 - C/4.5 + 4, 0);
+  glColor3f(0, 1, 0);
+  desenha_bola(C/2 - C/4.5 + 4, -2);
+
+  glColor3f(1, 1, 1);
+  desenha_bola(-C/2 + C/6, 0);
+}
+
+void desenha_triangulo()
+{
+  const float y = ALTURA_MESA-TAMANHO_SALA+1.3;
+  const float C = COMPRIMENTO_MESA;
+  const float L = LARGURA_MESA;
+
+  glColor3f(1, 1, 1);
+  glBegin(GL_LINE_LOOP);
+    glVertex3f(C/2 - C/7, y, -L/6);
+    glVertex3f(C/2 - C/7, y, L/6);
+    glVertex3f(C/2 - C/4, y, 0);
+  glEnd();
+}
+
+void desenha_semicirculo()
+{
+  const float y = ALTURA_MESA-TAMANHO_SALA+1.6;
+  const float PI = acos(-1);
+  const float raio = 7;
+  const float delta = 0.001;
+
+  glColor3f(1,1,1);
+
+  glPushMatrix();
+  glTranslatef(-COMPRIMENTO_MESA/2 + COMPRIMENTO_MESA/8, 0, 0);
+  glBegin(GL_LINE_LOOP);
+    for (float ang = 0.0; ang <= PI; ang += delta) {
+      glVertex3f(raio*sin(ang), y, raio*cos(ang));
+    }
+  glEnd();
+  glPopMatrix();
 }
 
 // Funç¿o callback de redesenho da janela de visualização
@@ -314,6 +393,10 @@ void Desenha(void)
   DesenhaParede();
   desenha_chao();
   desenha_mesa();
+
+  desenha_triangulo();
+  desenha_semicirculo();
+  desenha_bolas();
 
   // Executa os comandos OpenGL
   glutSwapBuffers();
@@ -329,8 +412,8 @@ void PosicionaObservador(void)
   // Posiciona e orienta o observador
   glTranslatef(-obsX,-obsY,-obsZ);
 
-  printf("%f %f %f\n", obsX, obsY, obsZ);
-
+  printf("ox: %f oy: %f oz: %f\n", obsX, obsY, obsZ);
+  printf("rotx: %f roty: %f\n", rotX, rotY);
   glRotatef(rotX,1,0,0);
   glRotatef(rotY,0,1,0);
 }
@@ -452,15 +535,15 @@ void Inicializa(void)
 
   // Inicializa a variável que especifica o ângulo da projeção
   // perspectiva
-  angle=60;
+  angle=80;
 
   // Inicializa as variáveis usadas para alterar a posição do
   // observador virtual
-  rotX = 50;
-  rotY = 90;
-  obsX = -4.5;
-  obsY = 2.3;
-  obsZ = 33;
+  rotX = 46;
+  rotY = 190;
+  obsX = -0.2;
+  obsY = -36;
+  obsZ = 37;
 }
 
 // Programa Principal
@@ -473,7 +556,7 @@ int main(void)
   glutInitWindowPosition(5,5);
 
   // Especifica o tamanho inicial em pixels da janela GLUT
-  glutInitWindowSize(750,450);
+  glutInitWindowSize(1350,700);
 
   // Cria a janela passando como argumento o título da mesma
   glutCreateWindow("Desenho de um teapot iluminado por spots");
