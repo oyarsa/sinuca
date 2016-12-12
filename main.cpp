@@ -20,11 +20,11 @@ struct Objeto {
   int num_faces;
 };
 
-void desenha_objeto(Objeto* objeto)
+void desenha_obj_modo(Objeto* objeto, GLenum modo)
 {
   // Percorre todas as faces
   for(int f = 0; f < objeto->num_faces; f++) {
-    glBegin(GL_POLYGON);
+    glBegin(modo);
     // Percorre todos os vértices da face
     for(int v = 0; v < objeto->faces[f].num_vertices; v++) {
       Vertice* vertice = &objeto->vertices[objeto->faces[f].vertices[v]];
@@ -34,12 +34,22 @@ void desenha_objeto(Objeto* objeto)
   }
 }
 
+void desenha_objeto(Objeto* objeto)
+{
+    desenha_obj_modo(objeto, GL_POLYGON);
+    glPushAttrib(GL_CURRENT_BIT);
+    glColor3f(0, 0, 0);
+    glLineWidth(0.5);
+    desenha_obj_modo(objeto, GL_LINE_LOOP);
+    glPopAttrib();
+}
+
 const Face faces_paralelepido[] = {
-  { 4, { 0, 2, 3, 1 } },  // 0 - Frente
-  { 4, { 4, 5, 7, 6 } },  // 1 - Trás
-  { 4, { 4, 5, 1, 0 } },  // 2 - Baixo
+  { 4, { 0, 2, 3, 1 } },  // 0 - Frente ?
+  { 4, { 4, 5, 7, 6 } },  // 1 - Trás ?
+  { 4, { 4, 5, 1, 0 } },  // 2 - Baixo ?
   { 4, { 2, 3, 7, 6 } },  // 3 - Cima
-  { 4, { 2, 6, 4, 0 } },  // 4 - Esquerda
+  { 4, { 2, 6, 4, 0 } },  // 4 - Esquerda ?
   { 4, { 3, 1, 5, 7 } }   // 5 - Direita
 };
 
@@ -80,43 +90,18 @@ int x_ini,y_ini,bot;
 // Luz selecionada
 int luz = 0;
 
-// Posição de cada luz
-GLfloat posLuz[3][4] = {
-  {  10, 30,  10, 1 },
-  { -10, 30,  10, 1 },
-  {   0, 30, -10, 1 }
-};
-
-// Direção de cada luz
-GLfloat dirLuz[3][3] = {
-  { 0,-1,0 },
-  { 0,-1,0 },
-  { 0,-1,0 }
-};
-
-// Cor difusa de cada luz
-GLfloat luzDifusa[3][4] = {
-  { 1,0,0,1 },
-  { 0,1,0,1 },
-  { 0,0,1,1 }
-};
-
-// Cor especular de cada luz
-GLfloat luzEspecular[3][4] = {
-  { 1,0,0,1 },
-  { 0,1,0,1 },
-  { 0,0,1,1 }
-};
+GLfloat posLuz[4] = {  0, 70,  0, 1 };
+GLfloat dirLuz[3] = { 0,-1,0 };
+GLfloat luzDifusa[4] = { 0.4,0.4,0.4,1 };
+GLfloat luzEspecular[4] = { 0.7,0.7,0.7,1 };
+GLfloat luzAmbiente[4]= {0.0,0.0,0.0,1.0};
 
 // Função responsável pela especificação dos parâmetros de iluminaç¿o
 void DefineIluminacao(void)
 {
-  GLfloat luzAmbiente[4]= {0.2,0.2,0.2,1.0};
-
   // Capacidade de brilho do material
-  GLfloat especularidade[4]= {0.5,0.5,0.5,1.0};
+  GLfloat especularidade[4]= {0.7,0.7,0.7,1.0};
   GLint especMaterial = 90;
-
   // Define a refletância do material
   glMaterialfv(GL_FRONT,GL_SPECULAR, especularidade);
   // Define a concentração do brilho
@@ -126,15 +111,13 @@ void DefineIluminacao(void)
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
 
   // Define os parâmetros das fontes de luz
-  for(int i=0; i<3; ++i) {
-    glLightfv(GL_LIGHT0+i, GL_AMBIENT, luzAmbiente);
-    glLightfv(GL_LIGHT0+i, GL_DIFFUSE, luzDifusa[i]);
-    glLightfv(GL_LIGHT0+i, GL_SPECULAR, luzEspecular[i]);
-    glLightfv(GL_LIGHT0+i, GL_POSITION, posLuz[i]);
-    glLightfv(GL_LIGHT0+i,GL_SPOT_DIRECTION,dirLuz[i]);
-    glLightf(GL_LIGHT0+i,GL_SPOT_CUTOFF,80.0);
-    glLightf(GL_LIGHT0+i,GL_SPOT_EXPONENT,10.0);
-  }
+  glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular);
+  glLightfv(GL_LIGHT0, GL_POSITION, posLuz);
+  glLightfv(GL_LIGHT0,GL_SPOT_DIRECTION,dirLuz);
+  glLightf(GL_LIGHT0,GL_SPOT_CUTOFF,80.0);
+  glLightf(GL_LIGHT0,GL_SPOT_EXPONENT,5.0);
 }
 
 void DesenhaParede(void)
@@ -144,47 +127,47 @@ void DesenhaParede(void)
   glColor3f(0.75f, 0.75f, 0.75f);
   // Desenha FACE DE TRÁS
   glBegin(GL_POLYGON);
-    glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, -TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA,  TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, -TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA,  TAMANHO_SALA,-TAMANHO_SALA);
   glEnd();
 
   glColor3f(0.65f, 0.65f, 0.65f);
   // Desenha FACE DA FRENTE
   glBegin(GL_POLYGON);
-    glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA,  TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA,  TAMANHO_SALA,TAMANHO_SALA);
   glEnd();
 
   glColor3f(0.85f, 0.85f, 0.85f);
   // Desenha FACE D0 LADO ESQUERDO
   glBegin(GL_POLYGON);
-    glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
-    glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
+  glVertex3f(-TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
   glEnd();
 
   glColor3f(0.55f, 0.55f, 0.55f);
   // Desenha FACE D0 LADO DIREITO
   glBegin(GL_POLYGON);
-    glVertex3f(TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
-    glVertex3f(TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA,TAMANHO_SALA,-TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, -TAMANHO_SALA, TAMANHO_SALA);
+  glVertex3f(TAMANHO_SALA, -TAMANHO_SALA,-TAMANHO_SALA);
   glEnd();
 
-  /*glColor3f(0.95f, 0.95f, 0.95f);
+  glColor3f(0.95f, 0.95f, 0.95f);
   // Desenha FACE TOPO
   glBegin(GL_POLYGON);
     glVertex3f(-TAMANHO_SALA,TAMANHO_SALA,TAMANHO_SALA);
     glVertex3f(-TAMANHO_SALA, TAMANHO_SALA,-TAMANHO_SALA);
     glVertex3f(TAMANHO_SALA, TAMANHO_SALA, -TAMANHO_SALA);
     glVertex3f(TAMANHO_SALA, TAMANHO_SALA,TAMANHO_SALA);
-  glEnd();*/
+  glEnd();
 
 }
 
@@ -247,6 +230,7 @@ void desenha_pe_mesa(float x, float z)
   glPushMatrix();
   glTranslatef(x, -TAMANHO_SALA, z);
 
+  glColor3f(0.55, 0.34, 0.26);
   desenha_paralelepido(5, 5, ALTURA_MESA);
 
   glPopMatrix();
@@ -254,8 +238,6 @@ void desenha_pe_mesa(float x, float z)
 
 void desenha_pes_mesa()
 {
-  glColor3f(1,1,1);
-
   desenha_pe_mesa(0, 5);
   desenha_pe_mesa(0, -15);
   desenha_pe_mesa(0, 20);
@@ -269,6 +251,7 @@ void desenha_tampa_mesa()
   glPushMatrix();
   glTranslatef(-3, ALTURA_MESA - TAMANHO_SALA, 23);
 
+  glColor3f(0.55, 0.34, 0.26);
   desenha_paralelepido(20, 45, 2);
 
   glPopMatrix();
@@ -276,9 +259,7 @@ void desenha_tampa_mesa()
 
 void desenha_beirada_mesa()
 {
-  const float altura_beirada = 1.0f;
-
-  glColor3f(1, 0, 0);
+  const float altura_beirada = 3.0f;
 
   glPushMatrix();
   glTranslatef(-3, ALTURA_MESA-TAMANHO_SALA+2, 21);
@@ -299,7 +280,6 @@ void desenha_beirada_mesa()
   glTranslatef(-3, ALTURA_MESA-TAMANHO_SALA+2, 23);
   desenha_paralelepido(20, 2, altura_beirada);
   glPopMatrix();
-
 }
 
 void desenha_tabuleiro()
@@ -308,10 +288,10 @@ void desenha_tabuleiro()
 
   glColor3f(0, 1, 0);
   glBegin(GL_POLYGON);
-    glVertex3f(-3, y, 23);
-    glVertex3f(17, y, 23);
-    glVertex3f(17, y, -20);
-    glVertex3f(-3, y, -20);
+  glVertex3f(-3, y, 23);
+  glVertex3f(17, y, 23);
+  glVertex3f(17, y, -20);
+  glVertex3f(-3, y, -20);
   glEnd();
 }
 
@@ -320,7 +300,6 @@ void desenha_mesa()
   desenha_pes_mesa();
   desenha_tampa_mesa();
   desenha_beirada_mesa();
-  // Desenha tabuleiro
   desenha_tabuleiro();
 }
 
@@ -330,8 +309,9 @@ void Desenha(void)
   // Limpa a janela de visualização com a cor
   // de fundo definida previamente
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  DefineIluminacao();
 
-  //DesenhaParede();
+  DesenhaParede();
   desenha_chao();
   desenha_mesa();
 
@@ -374,38 +354,13 @@ void Teclado(unsigned char tecla, int x, int y)
 {
   if (tecla == 27) // ESC ?
     exit(0);
-  if (tecla >= '0' && tecla <= '2')
-    luz = tecla - '0';
 }
 
 // Função callback para tratar eventos de teclas especiais
 void TeclasEspeciais(int tecla, int x, int y)
 {
   switch(tecla) {
-  case GLUT_KEY_LEFT:
-    posLuz[luz][0] -=2;
-    break;
-  case GLUT_KEY_RIGHT:
-    posLuz[luz][0] +=2;
-    break;
-  case GLUT_KEY_UP:
-    posLuz[luz][1] +=2;
-    break;
-  case GLUT_KEY_DOWN:
-    posLuz[luz][1] -=2;
-    break;
-  case GLUT_KEY_PAGE_UP:
-    posLuz[luz][2] -=2;
-    break;
-  case GLUT_KEY_PAGE_DOWN:
-    posLuz[luz][2] +=2;
-    break;
-  case GLUT_KEY_HOME:
-    if(angle>=10)  angle -=5;
-    break;
-  case GLUT_KEY_END:
-    if(angle<=150) angle +=5;
-    break;
+
   }
   PosicionaObservador();
   glutPostRedisplay();
@@ -489,8 +444,6 @@ void Inicializa(void)
   glEnable(GL_LIGHTING);
   // Habilita as fontes de luz
   glEnable(GL_LIGHT0);
-  glEnable(GL_LIGHT1);
-  glEnable(GL_LIGHT2);
   // Habilita o depth-buffering
   glEnable(GL_DEPTH_TEST);
 
