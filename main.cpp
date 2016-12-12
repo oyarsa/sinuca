@@ -4,7 +4,145 @@
 #include <stdio.h>
 #include <math.h>
 
+#define EPS  1e-9
+#define ISZERO(x) ((x) < EPS)
 
+const double DELTA_T = 5;
+const double ATRITO_MESA = 0.000009;
+const double RAIO_BOLA = 15.0;
+const double ATRITO_COLISAO = 0.000009;
+const double MASSA_BOLAS = 15.0;
+const double MASSA_BRANCA = 10.0;
+
+const float esq = -50.0f;
+const float dir = -esq;
+const float cima = 50.0f;
+const float baixo = -cima;
+
+static GLsizei w, h;
+
+struct Vec2D {
+  double x;
+  double y;
+};
+
+struct Bola {
+  int id;
+  Vec2D pos;
+  Vec2D vel;
+  double accel;
+  double massa;
+};
+
+const int num_bolas = 3;
+Bola bolas[num_bolas];
+
+void updatePos(Bola& b)
+{
+  b.pos.x += b.vel.x;
+  b.pos.y += b.vel.y;
+  //printf("id %d -- vely: %g - posy: %g / velx: %g - posx: %g -- accel: %g\n",
+     //    b.id, b.vel.y, b.pos.y, b.vel.x, b.pos.x, b.accel);
+}
+
+void updateVeloc(Bola& b)
+{
+  b.vel.x = b.accel*b.vel.x;
+  b.vel.y = b.accel*b.vel.y;
+}
+
+void updateAccel(Bola& b, double atrito)
+{
+  b.accel = b.accel * (1-atrito);
+  if(ISZERO(b.accel)) {
+    b.accel = 0;
+    b.vel.x = 0;
+    b.vel.y = 0;
+  }
+}
+
+double distancia(Vec2D& a, Vec2D& b)
+{
+  double delta_x = b.x - a.x;
+  double delta_y = b.y - a.y;
+  return sqrt(delta_x*delta_x + delta_y*delta_y);
+}
+
+void snap(Bola& a, Bola& b)
+{
+  double dist = distancia(a.pos, b.pos);
+  double delta = 1.05;
+  double ang = atan2(a.pos.y - b.pos.y, a.pos.x - b.pos.x);
+
+  double x = dist*delta*cos(ang);
+  double y = dist*delta*sin(ang);
+
+  a.pos.x = b.pos.x + x;
+  a.pos.y = b.pos.y + y;
+}
+
+void onCollision(Bola& a, Bola& b)
+{
+  //printf("Colisao: a%d={%g, %g}, b%d={%g, %g}\n", a.id, a.pos.x, a.pos.y, b.id, b.pos.x, b.pos.y);
+
+  double novaVelAx = (a.vel.x * (a.massa - b.massa) + (2 * b.massa * b.vel.x)) / (a.massa + b.massa);
+  double novaVelAy = (a.vel.y * (a.massa - b.massa) + (2 * b.massa * b.vel.y)) / (a.massa + b.massa);
+  double novaVelBx = (b.vel.x * (b.massa - a.massa) + (2 * a.massa * a.vel.x)) / (a.massa + a.massa);
+  double novaVelBy = (b.vel.y * (b.massa -  a.massa) + (2 * a.massa * a.vel.y)) / (a.massa + a.massa);
+
+  a.vel.x = novaVelAx;
+  a.vel.y = novaVelAy;
+  //puts("update a");
+  updatePos(a);
+  updateAccel(a, ATRITO_COLISAO);
+
+  b.vel.x = novaVelBx;
+  b.vel.y = novaVelBy;
+  //puts("update b");
+  updatePos(b);
+  updateAccel(b, ATRITO_COLISAO);
+
+  snap(a,  b);
+}
+
+void checkCollision()
+{
+  for(Bola& a : bolas) {
+    for(Bola& b : bolas) {
+      if(a.id != b.id) {
+        double dist = distancia(a.pos, b.pos);
+        if(dist < 2 * RAIO_BOLA) {
+          onCollision(a, b);
+        }
+      }
+    }
+  }
+}
+
+void checkCanto(Bola& b)
+{
+  if(b.pos.x - esq < RAIO_BOLA || dir - b.pos.x < RAIO_BOLA) {
+    b.vel.x = -b.vel.x;
+  }
+  if(b.pos.y - baixo < RAIO_BOLA || cima - b.pos.y < RAIO_BOLA) {
+    b.vel.y = -b.vel.y;
+  }
+
+  updatePos(b);
+}
+
+void updateWorld()
+{
+  checkCollision();
+
+  for(Bola& b : bolas) {
+    updateAccel(b, ATRITO_MESA);
+    updateVeloc(b);
+    updatePos(b);
+
+    checkCanto(b);
+  }
+}
 
 #define MAX_VERTICES_POR_FACE 4
 
