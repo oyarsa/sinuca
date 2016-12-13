@@ -1,25 +1,30 @@
 #include <windows.h>
 #include <GL/glut.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
 
-#define EPS  1e-9
+#define EPS  (1e-9)
 #define ISZERO(x) ((x) < EPS)
+#define M_PI (3.14159265359)
+
+const float DELAY = 10;
 
 const double DELTA_T = 5;
 const double ATRITO_MESA = 0.000009;
-const double RAIO_BOLA = 15.0;
+const double RAIO_BOLA = 1;
 const double ATRITO_COLISAO = 0.000009;
 const double MASSA_BOLAS = 15.0;
-const double MASSA_BRANCA = 10.0;
+const double MASSA_BRANCA = 15.0;
 
-const float esq = -50.0f;
-const float dir = -esq;
-const float cima = 50.0f;
-const float baixo = -cima;
+const float COMPRIMENTO_MESA = 73;
+const float LARGURA_MESA = 35;
+const float ESPESSURA_MESA = 2;
+const float TAM_BEIRADA = 3.0f;
 
-static GLsizei w, h;
+const float esq = -COMPRIMENTO_MESA/2+TAM_BEIRADA;
+const float dir = COMPRIMENTO_MESA/2-TAM_BEIRADA;
+const float baixo = LARGURA_MESA/2-TAM_BEIRADA;
+const float cima = -LARGURA_MESA/2+TAM_BEIRADA;
 
 struct Vec2D {
   double x;
@@ -34,7 +39,27 @@ struct Bola {
   double massa;
 };
 
-const int num_bolas = 3;
+const float cores[7][3] =   {
+  {   1,    1,          1   },
+  {   1,    1,          0   },
+  {   0,    0,          1   },
+  {   1,    0.65,       0   },
+  {   0.5,  0,          0.5 },
+  {   1,    0,          0   },
+  {   0,    1,          0   },
+};
+
+const Vec2D posicao_inicial_bolas[7] = {
+  { -COMPRIMENTO_MESA/2 + COMPRIMENTO_MESA/6, 0 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5, 0 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5 + 2, -1 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5 + 2, 1 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5 + 4, 2 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5 + 4, 0 },
+  { COMPRIMENTO_MESA/2 - COMPRIMENTO_MESA/4.5 + 4, -2 },
+};
+
+const int num_bolas = 7;
 Bola bolas[num_bolas];
 
 void updatePos(Bola& b)
@@ -42,7 +67,7 @@ void updatePos(Bola& b)
   b.pos.x += b.vel.x;
   b.pos.y += b.vel.y;
   //printf("id %d -- vely: %g - posy: %g / velx: %g - posx: %g -- accel: %g\n",
-     //    b.id, b.vel.y, b.pos.y, b.vel.x, b.pos.x, b.accel);
+       //  b.id, b.vel.y, b.pos.y, b.vel.x, b.pos.x, b.accel);
 }
 
 void updateVeloc(Bola& b)
@@ -83,26 +108,24 @@ void snap(Bola& a, Bola& b)
 
 void onCollision(Bola& a, Bola& b)
 {
-  //printf("Colisao: a%d={%g, %g}, b%d={%g, %g}\n", a.id, a.pos.x, a.pos.y, b.id, b.pos.x, b.pos.y);
-
   double novaVelAx = (a.vel.x * (a.massa - b.massa) + (2 * b.massa * b.vel.x)) / (a.massa + b.massa);
   double novaVelAy = (a.vel.y * (a.massa - b.massa) + (2 * b.massa * b.vel.y)) / (a.massa + b.massa);
   double novaVelBx = (b.vel.x * (b.massa - a.massa) + (2 * a.massa * a.vel.x)) / (a.massa + a.massa);
   double novaVelBy = (b.vel.y * (b.massa -  a.massa) + (2 * a.massa * a.vel.y)) / (a.massa + a.massa);
 
+  double maxaccel = max(a.accel, b.accel);
+
   a.vel.x = novaVelAx;
   a.vel.y = novaVelAy;
-  //puts("update a");
+  a.accel = maxaccel;
   updatePos(a);
-  updateAccel(a, ATRITO_COLISAO);
 
   b.vel.x = novaVelBx;
   b.vel.y = novaVelBy;
-  //puts("update b");
+  b.accel = maxaccel;
   updatePos(b);
-  updateAccel(b, ATRITO_COLISAO);
 
-  snap(a,  b);
+  snap(a, b);
 }
 
 void checkCollision()
@@ -391,10 +414,6 @@ void desenha_pes_mesa()
   desenha_pe_mesa(33, 12.5);
 }
 
-const float COMPRIMENTO_MESA = 73;
-const float LARGURA_MESA = 35;
-const float ESPESSURA_MESA = 2;
-
 void desenha_tampa_mesa()
 {
   glPushMatrix();
@@ -406,29 +425,26 @@ void desenha_tampa_mesa()
   glPopMatrix();
 }
 
-const float T = 3.0f;
-
 void desenha_beirada_mesa()
 {
-
   glPushMatrix();
-  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, LARGURA_MESA/2 - T/2);
-  desenha_paralelepido(COMPRIMENTO_MESA, T, T);
+  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, LARGURA_MESA/2 - TAM_BEIRADA/2);
+  desenha_paralelepido(COMPRIMENTO_MESA, TAM_BEIRADA, TAM_BEIRADA);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, -LARGURA_MESA/2 + T/2);
-  desenha_paralelepido(COMPRIMENTO_MESA, T, T);
+  glTranslatef(0, ALTURA_MESA-TAMANHO_SALA+2, -LARGURA_MESA/2 + TAM_BEIRADA/2);
+  desenha_paralelepido(COMPRIMENTO_MESA, TAM_BEIRADA, TAM_BEIRADA);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(COMPRIMENTO_MESA/2 - T/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
-  desenha_paralelepido(T, LARGURA_MESA, T);
+  glTranslatef(COMPRIMENTO_MESA/2 - TAM_BEIRADA/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
+  desenha_paralelepido(TAM_BEIRADA, LARGURA_MESA, TAM_BEIRADA);
   glPopMatrix();
 
   glPushMatrix();
-  glTranslatef(-COMPRIMENTO_MESA/2 + T/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
-  desenha_paralelepido(T, LARGURA_MESA, T);
+  glTranslatef(-COMPRIMENTO_MESA/2 + TAM_BEIRADA/2, ALTURA_MESA-TAMANHO_SALA+2, 0);
+  desenha_paralelepido(TAM_BEIRADA, LARGURA_MESA, TAM_BEIRADA);
   glPopMatrix();
 }
 
@@ -436,15 +452,12 @@ void desenha_tabuleiro()
 {
   const float y = ALTURA_MESA-TAMANHO_SALA+1.2;
 
-  float C = COMPRIMENTO_MESA;
-  float L = LARGURA_MESA;
-
   glColor3f(0, 1, 0);
   glBegin(GL_POLYGON);
-  glVertex3f(-C/2+T/2, y, L/2-T/2);
-  glVertex3f(-C/2+T/2, y, -L/2+T/2);
-  glVertex3f(C/2-T/2, y, -L/2+T/2);
-  glVertex3f(C/2-T/2, y, L/2-T/2);
+  glVertex3f(esq, y, baixo);
+  glVertex3f(esq, y, cima);
+  glVertex3f(dir, y, cima);
+  glVertex3f(dir, y, baixo);
   glEnd();
 }
 
@@ -456,35 +469,21 @@ void desenha_mesa()
   desenha_tabuleiro();
 }
 
-void desenha_bola(float x, float z)
+void desenha_bola(double x, double z)
 {
-  const float ALTURA_BOLA = -TAMANHO_SALA+ALTURA_MESA+2.5;
+  const double ALTURA_BOLA = -TAMANHO_SALA+ALTURA_MESA+2.5;
   glPushMatrix();
-  glTranslatef(x, ALTURA_BOLA, z);
+  glTranslated(x, ALTURA_BOLA, z);
   glutSolidSphere(1, 10, 10);
   glPopMatrix();
 }
 
 void desenha_bolas()
 {
-  const float C = COMPRIMENTO_MESA;
-  const float L = LARGURA_MESA;
-
-  glColor3f(1, 1, 0);
-  desenha_bola(C/2 - C/4.5, 0);
-  glColor3f(0, 0, 1);
-  desenha_bola(C/2 - C/4.5 + 2, -1);
-  glColor3f(1, 0.65, 0);
-  desenha_bola(C/2 - C/4.5 + 2, 1);
-  glColor3f(0.5, 0, 0.5);
-  desenha_bola(C/2 - C/4.5 + 4, 2);
-  glColor3f(1, 0, 0);
-  desenha_bola(C/2 - C/4.5 + 4, 0);
-  glColor3f(0, 1, 0);
-  desenha_bola(C/2 - C/4.5 + 4, -2);
-
-  glColor3f(1, 1, 1);
-  desenha_bola(-C/2 + C/6, 0);
+  for (int i = 0; i < num_bolas; i++) {
+    glColor3fv(cores[i]);
+    desenha_bola(bolas[i].pos.x, bolas[i].pos.y);
+  }
 }
 
 void desenha_triangulo()
@@ -495,16 +494,15 @@ void desenha_triangulo()
 
   glColor3f(1, 1, 1);
   glBegin(GL_LINE_LOOP);
-    glVertex3f(C/2 - C/7, y, -L/6);
-    glVertex3f(C/2 - C/7, y, L/6);
-    glVertex3f(C/2 - C/4, y, 0);
+  glVertex3f(C/2 - C/7, y, -L/6);
+  glVertex3f(C/2 - C/7, y, L/6);
+  glVertex3f(C/2 - C/4, y, 0);
   glEnd();
 }
 
 void desenha_semicirculo()
 {
   const float y = ALTURA_MESA-TAMANHO_SALA+1.6;
-  const float PI = acos(-1);
   const float raio = 7;
   const float delta = 0.001;
 
@@ -513,10 +511,53 @@ void desenha_semicirculo()
   glPushMatrix();
   glTranslatef(-COMPRIMENTO_MESA/2 + COMPRIMENTO_MESA/8, 0, 0);
   glBegin(GL_LINE_LOOP);
-    for (float ang = 0.0; ang <= PI; ang += delta) {
-      glVertex3f(raio*sin(ang), y, raio*cos(ang));
-    }
+  for (float ang = 0.0; ang <= M_PI; ang += delta) {
+    glVertex3f(raio*sin(ang), y, raio*cos(ang));
+  }
   glEnd();
+  glPopMatrix();
+}
+
+float taco_y = ALTURA_MESA-TAMANHO_SALA+1.6 + 9;
+float taco_x = -4.5;
+
+void desenha_taco()
+{
+  glPushMatrix();
+  glTranslatef(-50 + taco_x, taco_y, 0);
+  glRotatef(90, 0, 1, 0);
+  glRotatef(15, 1, 0, 0);
+
+  const float inc = 2*M_PI/40;
+  const float raio_base = 0.7;
+  const float raio_ponta = 0.5;
+  const float tamanho = 30;
+
+  glColor3f(1, 1, 0);
+
+  glBegin(GL_QUAD_STRIP);
+  for(GLfloat ang = 0; ang <= 2*M_PI; ang+=inc) {
+    glVertex3f(raio_base*cos(ang),raio_base*sin(ang),0);
+    glVertex3f(raio_ponta*cos(ang),raio_ponta*sin(ang),tamanho-1);
+  }
+  glEnd();
+
+  glColor3f(0, 0, 0);
+  glBegin(GL_QUAD_STRIP);
+  for(GLfloat ang = 0; ang <= 2*M_PI; ang+=inc) {
+    glVertex3f((raio_ponta+0.1)*cos(ang),(raio_ponta+0.1)*sin(ang),tamanho-0.8);
+    glVertex3f(raio_ponta*cos(ang),raio_ponta*sin(ang),tamanho);
+  }
+  glEnd();
+
+  glBegin(GL_TRIANGLE_FAN);
+  glVertex3f(0,0,tamanho);
+  for(GLfloat ang = 0; ang <= 2*M_PI; ang+=inc) {
+    glVertex3f(raio_ponta*cos(ang),raio_ponta*sin(ang),tamanho);
+  }
+  glEnd();
+
+  glutSolidTorus(raio_base-raio_ponta,raio_ponta,20,20);
   glPopMatrix();
 }
 
@@ -535,6 +576,7 @@ void Desenha(void)
   desenha_triangulo();
   desenha_semicirculo();
   desenha_bolas();
+  desenha_taco();
 
   // Executa os comandos OpenGL
   glutSwapBuffers();
@@ -550,8 +592,6 @@ void PosicionaObservador(void)
   // Posiciona e orienta o observador
   glTranslatef(-obsX,-obsY,-obsZ);
 
-  printf("ox: %f oy: %f oz: %f\n", obsX, obsY, obsZ);
-  printf("rotx: %f roty: %f\n", rotX, rotY);
   glRotatef(rotX,1,0,0);
   glRotatef(rotY,0,1,0);
 }
@@ -568,13 +608,6 @@ void EspecificaParametrosVisualizacao(void)
   gluPerspective(angle,fAspect,0.5,500);
 
   PosicionaObservador();
-}
-
-// Função callback chamada para gerenciar eventos de teclas normais (ESC)
-void Teclado(unsigned char tecla, int x, int y)
-{
-  if (tecla == 27) // ESC ?
-    exit(0);
 }
 
 // Função callback para tratar eventos de teclas especiais
@@ -653,6 +686,21 @@ void AlteraTamanhoJanela(GLsizei w, GLsizei h)
   EspecificaParametrosVisualizacao();
 }
 
+void inicializa_mundo()
+{
+  for (int i = 0; i < num_bolas; i++) {
+    bolas[i].id = i;
+    bolas[i].accel = 0;
+    bolas[i].vel.x = 0;
+    bolas[i].vel.y = 0;
+    bolas[i].massa = MASSA_BOLAS + 2*i;
+    bolas[i].pos = posicao_inicial_bolas[i];
+  }
+  bolas[0].massa = MASSA_BRANCA;
+  bolas[0].vel.x = 0.3;
+  bolas[0].accel = 1;
+}
+
 // Função responsável por inicializar parâmetros e variáveis
 void Inicializa(void)
 {
@@ -682,6 +730,54 @@ void Inicializa(void)
   obsX = -0.2;
   obsY = -36;
   obsZ = 37;
+
+  inicializa_mundo();
+}
+
+bool animacao = false;
+
+void anima(int)
+{
+  updateWorld();
+  glutPostRedisplay();
+
+  if (animacao)
+    glutTimerFunc(DELAY, anima, 0);
+}
+
+static float tempo_anima_taco = 0;
+void anima_taco(int)
+{
+  const float max_tempo = 10;
+  const float delta = 0.3;
+
+  tempo_anima_taco += delta;
+  if (tempo_anima_taco >= 2 * max_tempo) {
+    animacao = true;
+    glutTimerFunc(DELAY, anima, 0);
+    return;
+  } else if (tempo_anima_taco >= max_tempo) {
+    taco_x += delta;
+    taco_y -= delta;
+  } else {
+    taco_x -= delta;
+    taco_y += delta;
+  }
+  glutPostRedisplay();
+  glutTimerFunc(DELAY, anima_taco, 0);
+}
+
+// Função callback chamada para gerenciar eventos de teclas normais (ESC)
+void Teclado(unsigned char tecla, int x, int y)
+{
+  if (tecla == 27) // ESC ?
+    exit(0);
+  if (tecla == 'x') {
+    tempo_anima_taco = 0;
+    animacao = false;
+    glutTimerFunc(1000, anima_taco, 0);
+    inicializa_mundo();
+  }
 }
 
 // Programa Principal
@@ -716,6 +812,8 @@ int main(void)
 
   // Registra a função callback para eventos de movimento do mouse
   glutMotionFunc(GerenciaMovim);
+
+  glutTimerFunc(1000, anima_taco, 0);
 
   // Chama a função responsável por fazer as inicializações
   Inicializa();
