@@ -7,7 +7,7 @@
 #define ISZERO(x) ((x) < EPS)
 #define M_PI (3.14159265359)
 
-const float DELAY = 10;
+const float DELAY = 16.667;
 
 const double DELTA_T = 5;
 const double ATRITO_MESA = 0.000009;
@@ -67,7 +67,7 @@ void updatePos(Bola& b)
   b.pos.x += b.vel.x;
   b.pos.y += b.vel.y;
   //printf("id %d -- vely: %g - posy: %g / velx: %g - posx: %g -- accel: %g\n",
-       //  b.id, b.vel.y, b.pos.y, b.vel.x, b.pos.x, b.accel);
+  //  b.id, b.vel.y, b.pos.y, b.vel.x, b.pos.x, b.accel);
 }
 
 void updateVeloc(Bola& b)
@@ -130,11 +130,11 @@ void onCollision(Bola& a, Bola& b)
 
 void checkCollision()
 {
-  for(Bola& a : bolas) {
-    for(Bola& b : bolas) {
-      if(a.id != b.id) {
+  for (Bola& a : bolas) {
+    for (Bola& b : bolas) {
+      if (a.id != b.id) {
         double dist = distancia(a.pos, b.pos);
-        if(dist < 2 * RAIO_BOLA) {
+        if (dist < 2 * RAIO_BOLA) {
           onCollision(a, b);
         }
       }
@@ -144,10 +144,10 @@ void checkCollision()
 
 void checkCanto(Bola& b)
 {
-  if(b.pos.x - esq < RAIO_BOLA || dir - b.pos.x < RAIO_BOLA) {
+  if (b.pos.x - esq < RAIO_BOLA || dir - b.pos.x < RAIO_BOLA) {
     b.vel.x = -b.vel.x;
   }
-  if(b.pos.y - baixo < RAIO_BOLA || cima - b.pos.y < RAIO_BOLA) {
+  if (b.pos.y - baixo < RAIO_BOLA || cima - b.pos.y < RAIO_BOLA) {
     b.vel.y = -b.vel.y;
   }
 
@@ -167,82 +167,6 @@ void updateWorld()
   }
 }
 
-#define MAX_VERTICES_POR_FACE 4
-
-struct Vertice {
-  float x, y, z;
-};
-
-struct Face {
-  int num_vertices;
-  int vertices[MAX_VERTICES_POR_FACE];
-};
-
-struct Objeto {
-  Vertice* vertices;
-  const Face* faces;
-  int num_faces;
-};
-
-void desenha_obj_modo(Objeto* objeto, GLenum modo)
-{
-  // Percorre todas as faces
-  for(int f = 0; f < objeto->num_faces; f++) {
-    glBegin(modo);
-    // Percorre todos os vértices da face
-    for(int v = 0; v < objeto->faces[f].num_vertices; v++) {
-      Vertice* vertice = &objeto->vertices[objeto->faces[f].vertices[v]];
-      glVertex3f(vertice->x, vertice->y, vertice->z);
-    }
-    glEnd();
-  }
-}
-
-void desenha_objeto(Objeto* objeto)
-{
-  desenha_obj_modo(objeto, GL_POLYGON);
-  glPushAttrib(GL_CURRENT_BIT);
-  glColor3f(0, 0, 0);
-  glLineWidth(0.5);
-  desenha_obj_modo(objeto, GL_LINE_LOOP);
-  glPopAttrib();
-}
-
-const Face faces_paralelepido[] = {
-  { 4, { 0, 1, 3, 2 } },  // 0 - Frente ?*
-  { 4, { 4, 5, 7, 6 } },  // 1 - Trás ?
-  { 4, { 4, 5, 1, 0 } },  // 2 - Baixo ?
-  { 4, { 2, 3, 7, 6 } },  // 3 - Cima
-  { 4, { 2, 6, 4, 0 } },  // 4 - Esquerda ?
-  { 4, { 3, 1, 5, 7 } }   // 5 - Direita
-};
-
-Objeto novo_paralelepido(float comprimento, float largura, float altura)
-{
-  Vertice* vertices = new Vertice[8];
-  vertices[0] = {0.0f, 0.0f, 0.0f};               // 0
-  vertices[1] = {comprimento, 0.0f, 0.0f};        // 1
-  vertices[2] = {0.0f, altura, 0.0f};             // 2
-  vertices[3] = {comprimento, altura, 0.0f};      // 3
-  vertices[4] = {0.0f, 0.0f, -largura};           // 4
-  vertices[5] = {comprimento, 0.0f, -largura};    // 5
-  vertices[6] = {0.0f, altura, -largura};         // 6
-  vertices[7] = {comprimento, altura, -largura};  // 7
-
-  Objeto paralelepido = {
-    vertices,
-    faces_paralelepido,
-    6
-  };
-
-  return paralelepido;
-}
-
-void free_paralelepido(Objeto* paralelepido)
-{
-  free(paralelepido->vertices);
-}
-
 const float TAMANHO_SALA = 70.0f;
 
 // Variáveis para controles de navegação
@@ -254,7 +178,7 @@ int x_ini,y_ini,bot;
 // Luz selecionada
 int luz = 0;
 
-GLfloat posLuz[4] = {  0, 70,  0, 1 };
+GLfloat posLuz[4] = {  0, 50,  0, 1 };
 GLfloat dirLuz[3] = { 0,-1,0 };
 GLfloat luzDifusa[4] = { 0.4,0.4,0.4,1 };
 GLfloat luzEspecular[4] = { 0.7,0.7,0.7,1 };
@@ -474,7 +398,7 @@ void desenha_bola(double x, double z)
   const double ALTURA_BOLA = -TAMANHO_SALA+ALTURA_MESA+2.5;
   glPushMatrix();
   glTranslated(x, ALTURA_BOLA, z);
-  glutSolidSphere(1, 10, 10);
+  glutSolidSphere(1, 30, 30);
   glPopMatrix();
 }
 
@@ -545,7 +469,7 @@ void desenha_taco()
   glColor3f(0, 0, 0);
   glBegin(GL_QUAD_STRIP);
   for(GLfloat ang = 0; ang <= 2*M_PI; ang+=inc) {
-    glVertex3f((raio_ponta+0.1)*cos(ang),(raio_ponta+0.1)*sin(ang),tamanho-0.8);
+    glVertex3f((raio_ponta+0.1)*cos(ang),(raio_ponta+0.1)*sin(ang),tamanho-1.2);
     glVertex3f(raio_ponta*cos(ang),raio_ponta*sin(ang),tamanho);
   }
   glEnd();
@@ -697,7 +621,7 @@ void inicializa_mundo()
     bolas[i].pos = posicao_inicial_bolas[i];
   }
   bolas[0].massa = MASSA_BRANCA;
-  bolas[0].vel.x = 0.3;
+  bolas[0].vel.x = 0.5;
   bolas[0].accel = 1;
 }
 
@@ -793,7 +717,7 @@ int main(void)
   glutInitWindowSize(1350,700);
 
   // Cria a janela passando como argumento o título da mesma
-  glutCreateWindow("Desenho de um teapot iluminado por spots");
+  glutCreateWindow("Sinuca");
 
   // Registra a função callback de redesenho da janela de visualização
   glutDisplayFunc(Desenha);
@@ -823,4 +747,3 @@ int main(void)
 
   return 0;
 }
-
